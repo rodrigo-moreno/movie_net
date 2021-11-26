@@ -1,0 +1,7 @@
+# Ignore cache
+__pycache__/*
+
+# Ignore temporary files
+*.swp
+*.swo
+
