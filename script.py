@@ -1,7 +1,10 @@
 import requests
+import re
 from bs4 import BeautifulSoup
 
 surl = 'https://www.imdb.com/find?q={}&ref_=nv_sr_sm'
+
+cs = '<b>.*</b>\s.*\s'
 
 
 class Actor():
@@ -18,10 +21,16 @@ class Actor():
         Extract the movies of the actor.
         """
         resp = self.soup.find(class_ = 'filmo-category-section')
-        jobs = resp.find_all('b')
-        #print(self.job_urls)
+        jobs = resp.find_all(class_ = 'filmo-row')
+        movies = []
+        for job in jobs:
+            head = re.search(cs, str(job))
+            if re.search('<br/>', head.group()):
+                job = job.find('b')
+                movies.append(job)
+                #print(job, '\n')
+        jobs = movies
 
-        # This kind of fails because it doesn't filter TV shows away
         self.job_names = [job.text for job in jobs]
         #print(self.job_names)
         self.job_urls = [job.find('a')['href'].split('/')[-2] for job in jobs]
