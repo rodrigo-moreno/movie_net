@@ -9,12 +9,17 @@ cs = '<b>.*</b>\s.*\s'
 
 class Actor():
     def __init__(self, code):
+        self.code = code
         self.url = 'https://www.imdb.com/name/{}/?ref_=fn_al_nm_1'.format(code)
         headers = {'Accept-Language': 'en-US'}
         self.resp = requests.get(self.url, headers = headers)
         self.soup = BeautifulSoup(self.resp.content, 'html.parser')
-        #self.name = name
+        self.name = self._get_name()
         self.extract_movies()
+    
+    def _get_name(self):
+        resp = self.soup.find(class_ = 'itemprop')
+        return resp.text
 
     def extract_movies(self):
         """
@@ -37,15 +42,31 @@ class Actor():
         self.jobs = dict(zip(self.job_urls, self.job_names))
         return self.jobs
 
+    def __repr__(self):
+        return '{} ({})'.format(self.name, self.code)
+
+    def __str__(self):
+        return '{} ({})'.format(self.name, self.code)
+
 
 class Movie():
     def __init__(self, code):
+        self.code = code
         self.url = 'https://www.imdb.com/title/{}/?ref_=fn_al_nm_1'.format(code)
         headers = {'Accept-Language': 'en-US'} # This could probably be a global variable
         self.resp = requests.get(self.url, headers = headers)
         self.soup = BeautifulSoup(self.resp.content, 'html.parser')
-        #self.name = name
+        self.name = self._get_name()
+        self.year = self._get_year()
         self.get_cast()
+
+    def _get_name(self):
+        resp = self.soup.find('h1')
+        return resp.text
+
+    def _get_year(self):
+        resp = self.soup.find(class_ = 'ipc-link')
+        return resp.text
 
     def _get_cast_link(self):
         """
@@ -64,6 +85,12 @@ class Movie():
         self.cast_names = cast.cast_names
         self.cast = dict(zip(self.cast_urls, self.cast_names))
         return self.cast
+
+    def __repr__(self):
+        return '{} ({})'.format(self.name, self.code)
+
+    def __str__(self):
+        return '{} ({})'.format(self.name, self.code)
 
 
 class Cast():
