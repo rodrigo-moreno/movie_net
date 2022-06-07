@@ -5,3 +5,6 @@ __pycache__/*
 *.swp
 *.swo
 
+# Ignore profile files
+*.prof
+
