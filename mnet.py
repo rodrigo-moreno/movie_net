@@ -1,5 +1,5 @@
 import networkx as nx
-from script import Movie, Actor
+from movies import Movie, Actor
 
 net = open('history.txt', 'r')
 

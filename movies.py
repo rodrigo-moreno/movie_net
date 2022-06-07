@@ -8,14 +8,17 @@ cs = '<b>.*</b>\s.*\s'
 
 
 class Actor():
-    def __init__(self, code):
+    def __init__(self, code, session = None):
         self.code = code
         self.url = 'https://www.imdb.com/name/{}/?ref_=fn_al_nm_1'.format(code)
         headers = {'Accept-Language': 'en-US'}
-        self.resp = requests.get(self.url, headers = headers)
+        if session is None:
+            self.resp = requests.get(self.url, headers = headers)
+        else:
+            self.resp = session.get(self.url, headers = headers)
         self.soup = BeautifulSoup(self.resp.content, 'html.parser')
         self.name = self._get_name()
-        self.extract_movies()
+        #self.extract_movies()
     
     def _get_name(self):
         resp = self.soup.find(class_ = 'itemprop')
@@ -50,15 +53,18 @@ class Actor():
 
 
 class Movie():
-    def __init__(self, code):
+    def __init__(self, code, session = None):
         self.code = code
         self.url = 'https://www.imdb.com/title/{}/?ref_=fn_al_nm_1'.format(code)
         headers = {'Accept-Language': 'en-US'} # This could probably be a global variable
-        self.resp = requests.get(self.url, headers = headers)
+        if session is None:
+            self.resp = requests.get(self.url, headers = headers)
+        else:
+            self.resp = session.get(self.url, headers = headers)
         self.soup = BeautifulSoup(self.resp.content, 'html.parser')
         self.name = self._get_name()
-        self.year = self._get_year()
-        self.get_cast()
+        #self.year = self._get_year()
+        #self.get_cast()
 
     def _get_name(self):
         resp = self.soup.find('h1')
@@ -67,6 +73,13 @@ class Movie():
     def _get_year(self):
         resp = self.soup.find(class_ = 'ipc-link')
         return resp.text
+
+    def get_score(self):
+        resp = self.soup.find(class_ = 'sc-7ab21ed2-1 jGRxWM')
+        if resp.text:
+            return resp.text
+        else:
+            return None
 
     def _get_cast_link(self):
         """
