@@ -7,19 +7,55 @@ surl = 'https://www.imdb.com/find?q={}&ref_=nv_sr_sm'
 cs = '<b>.*</b>\s.*\s'
 
 
-class Actor():
-    def __init__(self, code, session = None):
-        self.code = code
-        self.url = 'https://www.imdb.com/name/{}/?ref_=fn_al_nm_1'.format(code)
-        headers = {'Accept-Language': 'en-US'}
-        if session is None:
-            self.resp = requests.get(self.url, headers = headers)
+class MovieThing():
+    def __init__(self, code = None, html = None, session = None):
+        if code is not None:
+            self._from_code(code, session)
+        elif html is not None:
+            self._from_html(html)
         else:
-            self.resp = session.get(self.url, headers = headers)
-        self.soup = BeautifulSoup(self.resp.content, 'html.parser')
+            raise TypeError
         self.name = self._get_name()
-        #self.extract_movies()
+
+    def _from_code(self, code, session):
+        self.code = code
+        self.url = f'https://www.imdb.com/{self.type}/{code}/?ref_=fn_al_nm_1'
+        header = {'Accept-Language': 'en-US'}
+        if session is None:
+            self.resp = requests.get(self.url, headers = header)
+        else:
+            self.resp = session.get(self.url, headers = header)
+        self.soup = BeautifulSoup(self.resp.content, 'html.parser')
+
+    def _from_html(self, html):
+        self.soup = BeautifulSoup(html, 'html.parser')
+        self._get_code()
+        self.url = f'https://www.imdb.com/{self.type}/{self.code}/?ref_=fn_al_nm_1'
+
+    def _get_code(self):
+        pass
+
+    def _get_name():
+        pass
+
+    def __repr__(self):
+        return '{} ({})'.format(self.name, self.code)
+
+    def __str__(self):
+        return '{} ({})'.format(self.name, self.code)
+
+
+class Actor(MovieThing):
+    def __init__(self, code=None, html=None, session=None):
+        self.type = 'name'
+        super().__init__(code = code,
+                         html = html,
+                         session = session)
     
+    def _get_code(self):
+        code_html = self.soup.find('meta', property = 'pageId')
+        self.code = code_html.attrs['content']
+
     def _get_name(self):
         resp = self.soup.find(class_ = 'itemprop')
         return resp.text
@@ -45,26 +81,18 @@ class Actor():
         self.jobs = dict(zip(self.job_urls, self.job_names))
         return self.jobs
 
-    def __repr__(self):
-        return '{} ({})'.format(self.name, self.code)
 
-    def __str__(self):
-        return '{} ({})'.format(self.name, self.code)
+class Movie(MovieThing):
+    def __init__(self, code=None, html=None, session=None):
+        self.type = 'title'
+        super().__init__(code = code,
+                         html = html,
+                         session = session)
 
-
-class Movie():
-    def __init__(self, code, session = None):
-        self.code = code
-        self.url = 'https://www.imdb.com/title/{}/?ref_=fn_al_nm_1'.format(code)
-        headers = {'Accept-Language': 'en-US'} # This could probably be a global variable
-        if session is None:
-            self.resp = requests.get(self.url, headers = headers)
-        else:
-            self.resp = session.get(self.url, headers = headers)
-        self.soup = BeautifulSoup(self.resp.content, 'html.parser')
-        self.name = self._get_name()
-        #self.year = self._get_year()
-        #self.get_cast()
+    def _get_code(self):
+        code_html = self.soup.find('meta', property = 'og:url')
+        code_str = code_html.attrs['content']
+        self.code = code_str.split('/')[-2]
 
     def _get_name(self):
         resp = self.soup.find('h1')
@@ -98,12 +126,6 @@ class Movie():
         self.cast_names = cast.cast_names
         self.cast = dict(zip(self.cast_urls, self.cast_names))
         return self.cast
-
-    def __repr__(self):
-        return '{} ({})'.format(self.name, self.code)
-
-    def __str__(self):
-        return '{} ({})'.format(self.name, self.code)
 
 
 class Cast():
