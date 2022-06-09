@@ -1,57 +1,48 @@
 from movies import *
 from requests import Session
-#import logging
 import cProfile
 import pstats
 import sys
-
-#requests.packages.urllib3.util.connection.HAS_IPV6 = False
-
-
-#logging.basicConfig()
-#logging.getLogger().setLevel(logging.DEBUG)
-#requests_log = logging.getLogger('requests.packages.urllib3')
-#requests_log.setLevel(logging.DEBUG)
-#requests_log.propagate = True
+import httpx
+import asyncio
 
 
-def main():
-    movie = sys.argv[1]
-    try:
-        actor = sys.argv[2]
-    except:
-        actor = ''
-
-    s = Session()
-
-    #print(movie)
-    #print(actor)
-
-    movie = Movie(movie, session = s)
+async def get_connections(movie):
+    movie = Movie(movie)
     movie.get_cast()
     print(movie.name)
 
     c = set()
-    for a in movie.cast_urls:
-        if a == actor:
-            print('Skipping this because it is undesired.')
-        else:
-            c_actor = Actor(a, session = s)
-            c_actor.extract_movies()
-            print(c_actor.name)
-            for job in c_actor.job_urls:
-                job = Movie(job, session = s)
-                c.add(job)
+
+    url = 'https://www.imdb.com/name/{}/?req_=fn_al_1'
+    header = {'Accept-Language': 'en-US'}
+
+    async with httpx.AsyncClient() as client:
+        #tasks = (Actor(code) for code in movie.cast_urls)
+        tasks = (client.get(url.format(code), headers = header) for code in movie.cast_urls)
+        reqs = await asyncio.gather(*tasks)
+
+    actors = [Actor(html = resp.content) for resp in reqs]
+    for actor in actors:
+        print(actor.name)
+        actor.extract_movies()
+        for k, v in actor.jobs.items():
+            c.add((k, v))
 
     print(c)
 
 
-if __name__ == '__main__':
+def main():
+    movie = sys.argv[1]
+    
     with cProfile.Profile() as pr:
-        main()
+        asyncio.run(get_connections(movie))
 
     stats = pstats.Stats(pr)
     stats.sort_stats(pstats.SortKey.TIME)
-    #stats.print_stats()
-    stats.dump_stats(filename = 'connections_nonipv4.prof')
+    stats.dump_stats(filename = 'conn.prof')
+
+
+if __name__ == '__main__':
+    main()
 
