@@ -1,4 +1,5 @@
 import requests
+from numpy import nan
 import re
 from bs4 import BeautifulSoup
 
@@ -104,10 +105,10 @@ class Movie(MovieThing):
 
     def get_score(self):
         resp = self.soup.find(class_ = 'sc-7ab21ed2-1 jGRxWM')
-        if resp.text:
-            return resp.text
-        else:
-            return None
+        try:
+            self.score = float(resp.text)
+        except:
+            self.score = nan
 
     def _get_cast_link(self):
         """
@@ -126,6 +127,21 @@ class Movie(MovieThing):
         self.cast_names = cast.cast_names
         self.cast = dict(zip(self.cast_urls, self.cast_names))
         return self.cast
+
+    def __lt__(self, other):
+        return self.score < other.score
+
+    def __le__(self, other):
+        return self.score <= other.score
+
+    def __eq__(self, other):
+        return self.score == other.score
+
+    def __ge__(self, other):
+        return self.score >= other.score
+
+    def __gt__(self, other):
+        return self.score >= other.score
 
 
 class Cast():
