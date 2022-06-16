@@ -9,6 +9,17 @@ import pstats
 import sys
 import httpx
 import asyncio
+import csv
+
+
+smovies = set()
+uactors = set()
+
+with open('history.csv', newline = '') as f:
+    data = csv.reader(f)
+    for row in data:
+        smovies.add(row[0].strip())
+        uactors.add(row[1].strip())
 
 
 async def get_connections(movie):
@@ -24,6 +35,8 @@ async def get_connections(movie):
     movie = Movie(movie)
     movie.get_cast()
     print(movie.name)
+    cast = set(movie.cast_urls)
+    available = cast - uactors
 
     c = set()
 
@@ -32,7 +45,7 @@ async def get_connections(movie):
 
     async with httpx.AsyncClient() as client:
         #tasks = (Actor(code) for code in movie.cast_urls)
-        tasks = (client.get(url.format(code), headers = header) for code in movie.cast_urls)
+        tasks = (client.get(url.format(code), headers = header) for code in available)
         reqs = await asyncio.gather(*tasks)
 
     actors = [Actor(html = resp.content) for resp in reqs]
@@ -41,6 +54,7 @@ async def get_connections(movie):
         actor.extract_movies()
         for k, v in actor.jobs.items():
             c.add(k)
+    c = c - smovies
 
     return c
 
@@ -81,7 +95,7 @@ async def sort_connections(movie_set):
 
     movies.sort()
     print(movies)
-    return None
+    return movies
 
 
 def main():
