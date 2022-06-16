@@ -47,6 +47,9 @@ class MovieThing():
 
 
 class Actor(MovieThing):
+    '''
+    An object that represents an actor from and IMDB page.
+    '''
     def __init__(self, code=None, html=None, session=None):
         self.type = 'name'
         super().__init__(code = code,
@@ -54,6 +57,15 @@ class Actor(MovieThing):
                          session = session)
     
     def _get_code(self):
+        '''
+        Find the internal IMDB ID code.
+
+        Input:
+        - self
+
+        Output:
+        - None
+        '''
         code_html = self.soup.find('meta', property = 'pageId')
         self.code = code_html.attrs['content']
 
@@ -63,7 +75,18 @@ class Actor(MovieThing):
 
     def extract_movies(self):
         """
-        Extract the movies of the actor.
+        Extract the movies of the actor. Creates three object attributes that
+        correspond to:
+        - the codes of the movies (self.job_urls)
+        - the names of the movies (self.job_names)
+        - a dictionary of both (self.jobs)
+
+        Input:
+        - self
+
+        Output:
+        - self.jobs: a dictionary of movie-code keys associated to movie-name
+          values.
         """
         resp = self.soup.find(class_ = 'filmo-category-section')
         jobs = resp.find_all(class_ = 'filmo-row')
@@ -84,6 +107,9 @@ class Actor(MovieThing):
 
 
 class Movie(MovieThing):
+    '''
+    An object that represents a movie from an IMDB page.
+    '''
     def __init__(self, code=None, html=None, session=None):
         self.type = 'title'
         super().__init__(code = code,
@@ -121,6 +147,12 @@ class Movie(MovieThing):
         return link['href']
 
     def get_cast(self):
+        '''
+        Get the cast of the movie. Creates three object attributes:
+        - self.cast_urls: a list() containing the IMDB ID codes of the cast.
+        - self.cast_names: a list() containing the names of the cast members.
+        - self.cast: a dict() with url-name pairs.
+        '''
         cast = Cast(self._get_cast_link())
         cast.get_cast()
         self.cast_urls = cast.cast_urls
@@ -129,15 +161,23 @@ class Movie(MovieThing):
         return self.cast
 
     def __lt__(self, other):
+        if self.score is nan:
+            return True
         return self.score < other.score
 
     def __le__(self, other):
+        if self.score is nan:
+            return True
         return self.score <= other.score
 
     def __eq__(self, other):
+        if self.score is nan:
+            return False
         return self.score == other.score
 
     def __ge__(self, other):
+        if self.score is nan:
+            return False
         return self.score >= other.score
 
     def __gt__(self, other):
@@ -153,7 +193,12 @@ class Cast():
 
     def get_cast(self):
         """
-        Get list of cast members and URL 'constructors'.
+        Get list of cast members and URL 'constructors'. Creates three object
+        attributes:
+        - self.cast_urls: a list() with the IMDB ID codes of the actors in the
+          movie.
+        - self.cast_names: a list() with the names of the cast of the movie.
+        - self.cast: a dict() of url-name pairs of the cast of the movie.
         """
         h = self.soup.find(class_ = 'cast_list')
         cast_list = h.find_all(class_ = 'primary_photo')
