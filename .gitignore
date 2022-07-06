@@ -8,3 +8,6 @@ __pycache__/*
 # Ignore profile files
 *.prof
 
+# Ignore possibilities file
+possibilities.txt
+
