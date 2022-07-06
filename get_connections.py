@@ -98,17 +98,29 @@ async def sort_connections(movie_set):
     return movies
 
 
+def writeout(movie_set):
+    """
+    Write out the connections as a file with two columns, indicating name and
+    ranking.
+    """
+    with open("possibilities.txt", "w") as f:
+        f.write("Title, Score\n")
+        for movie in movie_set:
+            f.write(f"{movie.name}, {movie.score}\n")
+
 def main():
     movie = sys.argv[1]
 
     with cProfile.Profile() as pr:
         conn_set = asyncio.run(get_connections(movie))
         #conn_set = set(list(conn_set)[:10])
-        asyncio.run(sort_connections(conn_set))
+        conn_set = asyncio.run(sort_connections(conn_set))
     
     stats = pstats.Stats(pr)
     stats.sort_stats(pstats.SortKey.TIME)
     stats.dump_stats(filename = 'conn.prof')
+
+    writeout(conn_set)
 
 
 if __name__ == '__main__':
