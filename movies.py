@@ -49,6 +49,20 @@ class MovieThing():
 class Actor(MovieThing):
     '''
     An object that represents an actor from and IMDB page.
+
+
+    Note: This has two bugs.
+    - 1: When we filter out TV-Shows, we look for things in parentheses that
+      usually have information stating that something is a TV-show or videogame
+      or something other than a typical movie. This raises issues when the
+      actor is also director. See the case of Matt Damon.
+    - 2: Some actors/actresses also have roles as casting directors or other
+      stuff, which are indicated before their acting gigs if they do that more
+      often than acting, giving false movie links with the code as-is. The
+      correct information is in a separate division with the label
+      'filmo-head-actor' or 'filmo-head-actress'. I need to find this division
+      first and then find the relevant table to extract the correct information.
+      See the case of Yvette Reid.
     '''
     def __init__(self, code=None, html=None, session=None):
         self.type = 'name'
@@ -88,7 +102,8 @@ class Actor(MovieThing):
         - self.jobs: a dictionary of movie-code keys associated to movie-name
           values.
         """
-        resp = self.soup.find(class_ = 'filmo-category-section')
+        resp = self.soup.find('div', {'id': re.compile('^filmo-head-act.')})
+        resp = resp.find_next(class_ = 'filmo-category-section')
         jobs = resp.find_all(class_ = 'filmo-row')
         movies = []
         for job in jobs:
@@ -222,6 +237,7 @@ def search_imdb(query):
 if __name__ == '__main__':
     a = Actor('nm0001548')
     print(a.resp)
+    a.extract_movies()
     print(a.job_names)
     print(a.job_urls)
     
@@ -230,5 +246,6 @@ if __name__ == '__main__':
     m = Movie('tt0098067')
     print(m.resp)
     m._get_cast_link()
+    m.get_cast()
     print(m.cast_names)
     print(m.cast_urls)

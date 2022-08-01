@@ -77,7 +77,7 @@ async def sort_connections(movie_set):
 
     while movie_set:
         print(f'On round {ii}.')
-        cs = 10
+        cs = 5
         cms = movie_set[:cs]
         del movie_set[:cs]
         async with httpx.AsyncClient() as client:
